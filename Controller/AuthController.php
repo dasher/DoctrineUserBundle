@@ -12,8 +12,17 @@
 
 namespace Bundle\DoctrineUserBundle\Controller;
 
+use Bundle\DoctrineUserBundle\Form\LoginForm;
 use Symfony\Framework\DoctrineBundle\Controller\DoctrineController;
 use Symfony\Components\EventDispatcher\Event;
+use Symfony\Components\Validator\Validator;
+use Symfony\Components\Validator\ConstraintValidatorFactory;
+use Symfony\Components\Validator\Mapping\ClassMetadataFactory;
+use Symfony\Components\Validator\Mapping\ClassMetadata;
+use Symfony\Components\Validator\Mapping\Loader\LoaderChain;
+use Symfony\Components\Validator\Mapping\Loader\AnnotationLoader;
+use Symfony\Components\Validator\Mapping\Loader\XmlFileLoader;
+use Symfony\Components\Validator\MessageInterpolator\XliffMessageInterpolator;
 
 class AuthController extends DoctrineController
 {
@@ -22,7 +31,22 @@ class AuthController extends DoctrineController
     {
         $request = $this->getRequest();
 
+        $messageFile = realpath($this->container->getParameter('kernel.root_dir').'/..').'/src/vendor/Symfony/src/Symfony/Components/Validator/Resources/i18n/messages.en.xml';
+        $validationFile = realpath($this->container->getParameter('kernel.root_dir').'/..').'/src/vendor/Symfony/src/Symfony/Components/Form/Resources/config/validation.xml';
+
+        $metadataFactory = new ClassMetadataFactory(new LoaderChain(array(
+            new AnnotationLoader(),
+            new XmlFileLoader($validationFile)
+        )));
+        $validatorFactory = new ConstraintValidatorFactory();
+        $messageInterpolator = new NoValidationXliffMessageInterpolator($messageFile);
+        $validator = new Validator($metadataFactory, $validatorFactory, $messageInterpolator);
+
+        $form = new LoginForm('login', array(), $validator);
+
         if('POST' === $request->getMethod()) {
+            $form->bind($request->get('login'));
+
             $username = $request->get('username');
             $password = $request->get('password');
             
