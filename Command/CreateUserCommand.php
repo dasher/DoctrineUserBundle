@@ -2,13 +2,15 @@
 
 namespace Bundle\DoctrineUserBundle\Command;
 
+require_once __DIR__."/../lib/Helper/DocumentManagerHelper.php";
+
 use Symfony\Framework\DoctrineBundle\Command\DoctrineCommand;
 use Symfony\Components\Console\Input\InputArgument;
 use Symfony\Components\Console\Input\InputOption;
 use Symfony\Components\Console\Input\InputInterface;
 use Symfony\Components\Console\Output\OutputInterface;
 use Symfony\Components\Console\Output\Output;
-use Bundle\DoctrineUserBundle\Entities\User;
+use Bundle\DoctrineUserBundle\Documents\User;
 
 /*
  * This file is part of the DoctrineUserBundle
@@ -69,22 +71,37 @@ You can create an inactive user (will not be able to log in):
 EOT
         );
     }
+	
+	private function fetchODMManager() {
+		
+		$application = $this->application;		
+		$container = $application->getKernel()->getContainer();
+		
+		//$this->container->setParameter('doctrine.odm.mongodb.default_server', 'gameDev01:27017');
+		//$this->container->setParameter('doctrine.odm.mongodb.default_database','cityShadows');
+		//$this->container->setParameter('doctrine.odm.mongodb.auto_generate_proxy_classes',true);
+		//$this->container->setParameter('doctrine.odm.mongodb.document_dirs',array(0=>'/home/dasher/development/mongoSliceFeeds/src/Application/HelloBundle/Document'));
+			
+		$service = $container->getService("doctrine.odm.mongodb.document_manager");				
+		
+		$helperSet = $application->getHelperSet();
+		$helperSet->set(new \Doctrine\ORM\Tools\Console\Helper\DocumentManagerHelper($service), 'odm');
+	}
 
     /**
      * @see Command
      */
     protected function execute(InputInterface $input, OutputInterface $output)
     {
-        DoctrineCommand::setApplicationEntityManager($this->application, $input->getOption('em'));
+    	$this->fetchODMManager();
         
-        $user = new User();
-        
+        $user = new User();        
         $user->setUsername($input->getArgument('username'));
         $user->setPassword($input->getArgument('password'));
         $user->setIsSuperAdmin($input->getOption('super-admin'));
         $user->setIsActive(!$input->getOption('inactive'));
 
-        $em = $this->getHelper('em')->getEntityManager();
+        $em = $this->getHelper('odm')->getDocumentManager();
 
         $em->persist($user);
         $em->flush();

@@ -5,7 +5,7 @@ namespace Bundle\DoctrineUserBundle\Auth;
 use Symfony\Framework\FoundationBundle\User as SymfonyUser;
 use Symfony\Foundation\EventDispatcher;
 use Symfony\Components\EventDispatcher\Event;
-use Doctrine\ORM\EntityManager;
+use Doctrine\ODM\MongoDB;
 
 class Listener
 {
@@ -18,7 +18,7 @@ class Listener
      */
     protected $em;
 
-    public function __construct(SymfonyUser $user, EntityManager $em, EventDispatcher $eventDispatcher)
+    public function __construct(SymfonyUser $user,  $em, EventDispatcher $eventDispatcher)
     {
         $this->user = $user;
         $this->em = $em;

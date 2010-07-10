@@ -17,6 +17,14 @@ use Symfony\Components\EventDispatcher\Event;
 
 class AuthController extends DoctrineController
 {
+	
+	public function attachDocumentDirs() {
+            
+		$documentDirs = $this->container->getParameter("doctrine.odm.mongodb.document_dirs");
+	    $documentDirs = array_merge($documentDirs, array(0=>__DIR__.'/../Documents'));            
+	    $this->container->setParameter('doctrine.odm.mongodb.document_dirs',$documentDirs);
+		
+	}
 
     public function loginAction()
     {
@@ -26,16 +34,26 @@ class AuthController extends DoctrineController
             $username = $request->get('username');
             $password = $request->get('password');
             
-            $user = $this->getEntityManager()
-            ->getRepository('Bundle\DoctrineUserBundle\Entities\User')
-            ->findOneByUsernameAndPassword($username, $password);
+            $odm = $this->container->getService("doctrine.odm.mongodb.document_manager");            
+            $this->attachDocumentDirs();
+            
+            $user = $odm->getRepository('Bundle\DoctrineUserBundle\Documents\User')->findOneByUsernameAndPassword($username, $password);
+            
+//            $user = $this->getEntityManager()
+//            ->getRepository('Bundle\DoctrineUserBundle\Entities\User')
+//            ->findOneByUsernameAndPassword($username, $password);
 
             if($user && $user->getIsActive())
             {
                 $event = new Event($this, 'doctrine_user.login', array('user' => $user));
                 $this->container->eventDispatcher->notify($event);
+                
+                $successRoute = $this->container->getParameter("doctrine_user.config.route.success");
+//                if (empty($successRoute)) {
+//                	$successRoute = $this->container->getParameter("doctrine_user.route.default.success");
+//                }
 
-                return $this->redirect($this->generateUrl('loginSuccess'));
+                return $this->redirect($this->generateUrl($successRoute));
             }
             else
             {
