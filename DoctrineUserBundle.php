@@ -27,6 +27,6 @@ class DoctrineUserBundle extends BaseBundle
 
     public function boot(ContainerInterface $container)
     {    	
-    	//$container->getService("doctrine_user.auth_listener");
+    	$container->getService("doctrine_user.auth_listener");
     }
 }
